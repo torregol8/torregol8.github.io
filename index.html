@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ca">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#FFD400">
+    <title>Rànquing de multes · C.E. Premià de Dalt</title>
+    <link rel="icon" href="logo-premia.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --yellow: #FFD400;
+            --yellow-soft: #FFE24D;
+            --yellow-pale: #FFF3B0;
+            --blue: #1B4DB1;
+            --blue-dark: #12348A;
+            --ink: #000;
+            --radius: 18px;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            background: var(--yellow);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--yellow);
+            color: var(--ink);
+            font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-size: 1rem;
+            line-height: 1.35;
+            /* espai per a la barra de setmanes fixa */
+            padding: 0 0 calc(5.5rem + var(--safe-bottom));
+        }
+
+        .wrap {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* ---------- Capçalera ---------- */
+        .site-header {
+            background: var(--blue);
+            color: var(--yellow);
+            padding: calc(1rem + env(safe-area-inset-top, 0px)) 0 1.5rem;
+            border-radius: 0 0 28px 28px;
+            box-shadow: 0 4px 0 var(--blue-dark);
+        }
+
+        .site-header .wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .site-header img {
+            width: 64px;
+            height: auto;
+            flex: none;
+            background: #fff;
+            border-radius: 50%;
+            padding: 6px;
+        }
+
+        .site-header h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .site-header p {
+            margin: 0.2rem 0 0;
+            font-size: 0.95rem;
+            font-weight: 400;
+            color: #fff;
+        }
+
+        /* ---------- Controls ---------- */
+        .controls {
+            display: grid;
+            gap: 0.75rem;
+            margin: 1.25rem 0 1rem;
+        }
+
+        .segmented {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--yellow-soft);
+            border: 3px solid var(--blue);
+            border-radius: 999px;
+            padding: 3px;
+        }
+
+        .segmented button {
+            font: inherit;
+            font-weight: 600;
+            font-size: 1rem;
+            min-height: 44px;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--ink);
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .segmented button[aria-pressed="true"] {
+            background: var(--blue);
+            color: var(--yellow);
+        }
+
+        .field {
+            display: grid;
+            gap: 0.3rem;
+        }
+
+        .field label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding-left: 0.4rem;
+        }
+
+        .select-wrap {
+            position: relative;
+        }
+
+        .select-wrap::after {
+            content: '';
+            position: absolute;
+            right: 1.1rem;
+            top: 50%;
+            width: 0.6rem;
+            height: 0.6rem;
+            border-right: 3px solid var(--blue);
+            border-bottom: 3px solid var(--blue);
+            transform: translateY(-70%) rotate(45deg);
+            pointer-events: none;
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            min-height: 48px;
+            font: inherit;
+            font-weight: 500;
+            color: var(--ink);
+            background: var(--yellow-pale);
+            border: 3px solid var(--blue);
+            border-radius: 999px;
+            padding: 0.5rem 2.6rem 0.5rem 1.1rem;
+            text-overflow: ellipsis;
+        }
+
+        /* ---------- Total ---------- */
+        .total {
+            background: var(--blue);
+            color: var(--yellow);
+            border-radius: var(--radius);
+            padding: 0.9rem 1.1rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 0 var(--blue-dark);
+        }
+
+        .total-label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .total-value {
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---------- Rànquing ---------- */
+        .ranking {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 2.1rem 1fr;
+            gap: 0.6rem;
+            align-items: center;
+            background: var(--yellow-pale);
+            border-radius: 14px;
+            padding: 0.65rem 0.8rem 0.65rem 0.6rem;
+        }
+
+        .row.podium {
+            border: 3px solid var(--blue);
+            padding: calc(0.65rem - 3px) calc(0.8rem - 3px) calc(0.65rem - 3px) calc(0.6rem - 3px);
+        }
+
+        .rank {
+            justify-self: center;
+            display: grid;
+            place-items: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .podium .rank {
+            background: var(--blue);
+            color: var(--yellow);
+        }
+
+        .row-main {
+            min-width: 0;
+        }
+
+        .row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.75rem;
+        }
+
+        .name {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .value {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .track {
+            height: 12px;
+            margin-top: 0.4rem;
+            background: rgba(27, 77, 177, 0.18);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .bar {
+            height: 100%;
+            width: 0;
+            background: var(--blue);
+            border-radius: 999px;
+            transition: width 0.5s cubic-bezier(.2, .8, .2, 1);
+        }
+
+        .message {
+            text-align: center;
+            font-weight: 500;
+            padding: 2rem 1rem;
+        }
+
+        /* ---------- Barra de setmana fixa ---------- */
+        .week-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--blue);
+            padding: 0.7rem 0 calc(0.7rem + var(--safe-bottom));
+            border-radius: 22px 22px 0 0;
+            box-shadow: 0 -4px 0 var(--blue-dark);
+        }
+
+        .week-bar .wrap {
+            display: grid;
+            grid-template-columns: 52px 1fr 52px;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .week-bar button {
+            height: 52px;
+            border: 0;
+            border-radius: 50%;
+            background: var(--yellow);
+            color: var(--blue-dark);
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            box-shadow: 0 3px 0 var(--yellow-soft);
+        }
+
+        .week-bar button:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .week-bar button:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .week-label {
+            text-align: center;
+            color: #fff;
+            font-size: 0.85rem;
+            line-height: 1.2;
+        }
+
+        .week-label strong {
+            display: block;
+            color: var(--yellow);
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        :focus-visible {
+            outline: 3px solid var(--ink);
+            outline-offset: 2px;
+        }
+
+        .week-bar :focus-visible {
+            outline-color: #fff;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bar {
+                transition: none;
+            }
+        }
+
+        @media (min-width: 600px) {
+            .site-header h1 {
+                font-size: 2rem;
+            }
+
+            .total-value {
+                font-size: 2.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="wrap">
+            <img src="logo-premia.png" alt="Escut del C.E. Premià de Dalt">
+            <div>
+                <h1>Rànquing de multes</h1>
+                <p>Primer equip femení, temporada 2026/27</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <section class="controls" aria-label="Filtres">
+            <div class="segmented" role="group" aria-label="Mostrar">
+                <button type="button" id="btnAmount" aria-pressed="true">Import</button>
+                <button type="button" id="btnCount" aria-pressed="false">Nombre de multes</button>
+            </div>
+
+            <div class="field">
+                <label for="fineTypeSelect">Tipus de multa</label>
+                <div class="select-wrap">
+                    <select id="fineTypeSelect">
+                        <option value="all">Totes les multes</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <section class="total" aria-live="polite">
+            <div class="total-label" id="totalLabel">Total acumulat</div>
+            <div class="total-value" id="totalAmount">0 €</div>
+        </section>
+
+        <ol class="ranking" id="ranking" aria-label="Classificació">
+            <li class="message">Carregant dades…</li>
+        </ol>
+    </main>
+
+    <nav class="week-bar" aria-label="Setmana">
+        <div class="wrap">
+            <button type="button" id="prevBtn" aria-label="Setmana anterior">◀</button>
+            <div class="week-label" aria-live="polite">
+                Fins a la setmana
+                <strong id="weekText">–</strong>
+            </div>
+            <button type="button" id="nextBtn" aria-label="Setmana següent">▶</button>
+        </div>
+    </nav>
+
+    <script src="./config.js"></script>
+    <script>
+        const CSV_URL = window.CSV_URL;
+
+        const rankingEl = document.getElementById('ranking');
+        const fineTypeSelect = document.getElementById('fineTypeSelect');
+        const btnAmount = document.getElementById('btnAmount');
+        const btnCount = document.getElementById('btnCount');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+
+        let allRows = [];
+        let weeks = [];
+        let selectedWeekIndex = 0;
+        let metric = 'amount'; // 'amount' | 'count'
+
+        function parseWeek(week) {
+            const parts = String(week).trim().split('/');
+            if (parts.length === 3) {
+                const day = Number(parts[0]);
+                const month = Number(parts[1]);
+                const year = Number(parts[2]);
+                return year * 10000 + month * 100 + day;
+            }
+            return 0;
+        }
+
+        function showMessage(text) {
+            rankingEl.innerHTML = '';
+            const li = document.createElement('li');
+            li.className = 'message';
+            li.textContent = text;
+            rankingEl.appendChild(li);
+        }
+
+        function formatEuro(value) {
+            const decimals = Number.isInteger(value) ? 0 : 2;
+            return new Intl.NumberFormat('ca-ES', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function formatValue(value) {
+            return metric === 'count'
+                ? new Intl.NumberFormat('ca-ES').format(value)
+                : formatEuro(value);
+        }
+
+        // ---------- Càrrega de dades ----------
+        if (!CSV_URL) {
+            showMessage('Falta configurar CSV_URL a config.js.');
+        } else {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                complete: function (results) {
+                    allRows = results.data.filter(r =>
+                        r.setmana && r.setmana.trim() !== '' &&
+                        r.nom && r.nom.trim() !== '' &&
+                        String(r.pagat).toUpperCase() === 'TRUE'
+                    ).map(r => ({
+                        setmana: r.setmana.trim(),
+                        nom: r.nom.trim(),
+                        multa: (r.multa || '').trim(),
+                        import: parseFloat(String(r['import total']).replace(',', '.')) || 0
+                    }));
+
+                    weeks = [...new Set(allRows.map(r => r.setmana))]
+                        .sort((a, b) => parseWeek(a) - parseWeek(b));
+                    selectedWeekIndex = weeks.length - 1;
+
+                    const fineTypes = [...new Set(allRows
+                        .map(r => r.multa)
+                        .filter(multa => multa !== '')
+                    )].sort((a, b) => a.localeCompare(b, 'ca'));
+                    fineTypes.forEach(multa => {
+                        const opt = document.createElement('option');
+                        opt.value = multa;
+                        opt.textContent = multa;
+                        fineTypeSelect.appendChild(opt);
+                    });
+
+                    update();
+                },
+                error: function () {
+                    showMessage('No s\'han pogut carregar les dades. Torna-ho a provar més tard.');
+                }
+            });
+        }
+
+        // ---------- Pintat ----------
+        function update() {
+            if (weeks.length === 0) {
+                showMessage('Encara no hi ha multes pagades.');
+                prevBtn.disabled = nextBtn.disabled = true;
+                return;
+            }
+
+            const selectedWeek = weeks[selectedWeekIndex];
+            const selectedFineType = fineTypeSelect.value;
+            const weekKey = parseWeek(selectedWeek);
+
+            document.getElementById('weekText').textContent = selectedWeek;
+            prevBtn.disabled = selectedWeekIndex <= 0;
+            nextBtn.disabled = selectedWeekIndex >= weeks.length - 1;
+
+            const totals = {};
+            allRows
+                .filter(r =>
+                    parseWeek(r.setmana) <= weekKey &&
+                    (selectedFineType === 'all' || r.multa === selectedFineType)
+                )
+                .forEach(r => {
+                    totals[r.nom] = (totals[r.nom] || 0) + (metric === 'count' ? 1 : r.import);
+                });
+
+            const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+            const total = sorted.reduce((sum, item) => sum + item[1], 0);
+
+            document.getElementById('totalLabel').textContent =
+                metric === 'count' ? 'Nombre total de multes' : 'Total acumulat';
+            document.getElementById('totalAmount').textContent = formatValue(total);
+
+            if (sorted.length === 0) {
+                showMessage('Cap multa d\'aquest tipus fins a aquesta setmana.');
+                return;
+            }
+
+            const max = sorted[0][1] || 1;
+            rankingEl.innerHTML = '';
+            const bars = [];
+            let rank = 0;
+            let previous = null;
+
+            sorted.forEach(([name, value], i) => {
+                // Empats comparteixen posició
+                if (value !== previous) rank = i + 1;
+                previous = value;
+
+                const li = document.createElement('li');
+                li.className = 'row' + (rank <= 3 ? ' podium' : '');
+
+                const rankEl = document.createElement('span');
+                rankEl.className = 'rank';
+                rankEl.textContent = rank;
+
+                const main = document.createElement('div');
+                main.className = 'row-main';
+
+                const top = document.createElement('div');
+                top.className = 'row-top';
+                const nameEl = document.createElement('span');
+                nameEl.className = 'name';
+                nameEl.textContent = name;
+                const valueEl = document.createElement('span');
+                valueEl.className = 'value';
+                valueEl.textContent = formatValue(value);
+                top.append(nameEl, valueEl);
+
+                const track = document.createElement('div');
+                track.className = 'track';
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                track.appendChild(bar);
+
+                main.append(top, track);
+                li.append(rankEl, main);
+                rankingEl.appendChild(li);
+
+                bars.push([bar, value > 0 ? Math.max(2, (value / max) * 100) : 0]);
+            });
+
+            // Anima les barres des de 0
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                bars.forEach(([bar, pct]) => { bar.style.width = pct + '%'; });
+            }));
+        }
+
+        // ---------- Esdeveniments ----------
+        function setMetric(next) {
+            metric = next;
+            btnAmount.setAttribute('aria-pressed', String(next === 'amount'));
+            btnCount.setAttribute('aria-pressed', String(next === 'count'));
+            update();
+        }
+
+        btnAmount.addEventListener('click', () => setMetric('amount'));
+        btnCount.addEventListener('click', () => setMetric('count'));
+        fineTypeSelect.addEventListener('change', update);
+
+        prevBtn.addEventListener('click', () => {
+            if (selectedWeekIndex > 0) {
+                selectedWeekIndex--;
+                update();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (selectedWeekIndex < weeks.length - 1) {
+                selectedWeekIndex++;
+                update();
+            }
+        });
+    </script>
+</body>
+
+</html>

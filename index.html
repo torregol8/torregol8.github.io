@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <style>
         :root {
             --yellow: #FFD400;
@@ -86,6 +85,103 @@
             font-size: 0.95rem;
             font-weight: 400;
             color: #fff;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        .logout {
+            margin-left: auto;
+            flex: none;
+            font: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-height: 40px;
+            padding: 0 1rem;
+            border-radius: 999px;
+            border: 2px solid var(--yellow);
+            background: transparent;
+            color: var(--yellow);
+            cursor: pointer;
+        }
+
+        .site-header .wrap>div {
+            min-width: 0;
+        }
+
+        /* ---------- Accés ---------- */
+        .login {
+            display: grid;
+            gap: 0.9rem;
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            background: var(--yellow-pale);
+            border: 3px solid var(--blue);
+            border-radius: var(--radius);
+        }
+
+        .login h2 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+
+        .login p {
+            margin: 0;
+        }
+
+        .login input[type="password"] {
+            width: 100%;
+            min-height: 50px;
+            font: inherit;
+            font-size: 1rem;
+            color: var(--ink);
+            background: #fff;
+            border: 3px solid var(--blue);
+            border-radius: 999px;
+            padding: 0.5rem 1.1rem;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 500;
+        }
+
+        .remember input {
+            width: 1.3rem;
+            height: 1.3rem;
+            accent-color: var(--blue);
+        }
+
+        .primary {
+            font: inherit;
+            font-weight: 700;
+            font-size: 1.05rem;
+            min-height: 52px;
+            border: 0;
+            border-radius: 999px;
+            background: var(--blue);
+            color: var(--yellow);
+            box-shadow: 0 4px 0 var(--blue-dark);
+            cursor: pointer;
+        }
+
+        .primary:active:not(:disabled) {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .primary:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .login-error {
+            min-height: 1.3em;
+            font-weight: 600;
+            color: #A11212;
         }
 
         /* ---------- Controls ---------- */
@@ -368,37 +464,53 @@
                 <h1>Rànquing de multes</h1>
                 <p>Primer equip femení, temporada 2026/27</p>
             </div>
+            <button type="button" class="logout" id="logoutBtn" hidden>Sortir</button>
         </div>
     </header>
 
     <main class="wrap">
-        <section class="controls" aria-label="Filtres">
-            <div class="segmented" role="group" aria-label="Mostrar">
-                <button type="button" id="btnAmount" aria-pressed="true">Import</button>
-                <button type="button" id="btnCount" aria-pressed="false">Nombre de multes</button>
-            </div>
+        <p class="message" id="boot">Carregant…</p>
 
-            <div class="field">
-                <label for="fineTypeSelect">Tipus de multa</label>
-                <div class="select-wrap">
-                    <select id="fineTypeSelect">
-                        <option value="all">Totes les multes</option>
-                    </select>
+        <form class="login" id="login" hidden>
+            <h2>Només per a l'equip</h2>
+            <p>Escriu la contrasenya per veure el rànquing.</p>
+            <input type="password" id="password" autocomplete="current-password" aria-label="Contrasenya"
+                placeholder="Contrasenya" required>
+            <label class="remember">
+                <input type="checkbox" id="remember" checked>
+                Recorda'm en aquest mòbil
+            </label>
+            <div class="login-error" id="loginError" role="alert"></div>
+            <button type="submit" class="primary" id="loginBtn">Entrar</button>
+        </form>
+
+        <div id="app" hidden>
+            <section class="controls" aria-label="Filtres">
+                <div class="segmented" role="group" aria-label="Mostrar">
+                    <button type="button" id="btnAmount" aria-pressed="true">Import</button>
+                    <button type="button" id="btnCount" aria-pressed="false">Nombre de multes</button>
                 </div>
-            </div>
-        </section>
 
-        <section class="total" aria-live="polite">
-            <div class="total-label" id="totalLabel">Total acumulat</div>
-            <div class="total-value" id="totalAmount">0 €</div>
-        </section>
+                <div class="field">
+                    <label for="fineTypeSelect">Tipus de multa</label>
+                    <div class="select-wrap">
+                        <select id="fineTypeSelect">
+                            <option value="all">Totes les multes</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
 
-        <ol class="ranking" id="ranking" aria-label="Classificació">
-            <li class="message">Carregant dades…</li>
-        </ol>
+            <section class="total" aria-live="polite">
+                <div class="total-label" id="totalLabel">Total acumulat</div>
+                <div class="total-value" id="totalAmount">0 €</div>
+            </section>
+
+            <ol class="ranking" id="ranking" aria-label="Classificació"></ol>
+        </div>
     </main>
 
-    <nav class="week-bar" aria-label="Setmana">
+    <nav class="week-bar" id="weekBar" aria-label="Setmana" hidden>
         <div class="wrap">
             <button type="button" id="prevBtn" aria-label="Setmana anterior">◀</button>
             <div class="week-label" aria-live="polite">
@@ -411,8 +523,6 @@
 
     <script src="./config.js"></script>
     <script>
-        const CSV_URL = window.CSV_URL;
-
         const rankingEl = document.getElementById('ranking');
         const fineTypeSelect = document.getElementById('fineTypeSelect');
         const btnAmount = document.getElementById('btnAmount');
@@ -460,46 +570,125 @@
                 : formatEuro(value);
         }
 
-        // ---------- Càrrega de dades ----------
-        if (!CSV_URL) {
-            showMessage('Falta configurar CSV_URL a config.js.');
-        } else {
-            Papa.parse(CSV_URL, {
-                download: true,
-                header: true,
-                complete: function (results) {
-                    allRows = results.data.filter(r =>
-                        r.setmana && r.setmana.trim() !== '' &&
-                        r.nom && r.nom.trim() !== '' &&
-                        String(r.pagat).toUpperCase() === 'TRUE'
-                    ).map(r => ({
-                        setmana: r.setmana.trim(),
-                        nom: r.nom.trim(),
-                        multa: (r.multa || '').trim(),
-                        import: parseFloat(String(r['import total']).replace(',', '.')) || 0
-                    }));
+        // ---------- Accés i càrrega de dades ----------
+        const API_URL = window.API_URL;
+        const STORAGE_KEY = 'premia_multes_pw';
 
-                    weeks = [...new Set(allRows.map(r => r.setmana))]
-                        .sort((a, b) => parseWeek(a) - parseWeek(b));
-                    selectedWeekIndex = weeks.length - 1;
+        const bootEl = document.getElementById('boot');
+        const loginForm = document.getElementById('login');
+        const appEl = document.getElementById('app');
+        const weekBar = document.getElementById('weekBar');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const passwordInput = document.getElementById('password');
+        const rememberInput = document.getElementById('remember');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
 
-                    const fineTypes = [...new Set(allRows
-                        .map(r => r.multa)
-                        .filter(multa => multa !== '')
-                    )].sort((a, b) => a.localeCompare(b, 'ca'));
-                    fineTypes.forEach(multa => {
-                        const opt = document.createElement('option');
-                        opt.value = multa;
-                        opt.textContent = multa;
-                        fineTypeSelect.appendChild(opt);
-                    });
+        function getSaved() {
+            try { return localStorage.getItem(STORAGE_KEY) || ''; } catch (e) { return ''; }
+        }
 
-                    update();
-                },
-                error: function () {
-                    showMessage('No s\'han pogut carregar les dades. Torna-ho a provar més tard.');
-                }
+        function setSaved(password) {
+            try {
+                if (password) localStorage.setItem(STORAGE_KEY, password);
+                else localStorage.removeItem(STORAGE_KEY);
+            } catch (e) { /* mode privat: no es pot recordar */ }
+        }
+
+        async function requestData(password) {
+            // text/plain evita la pre-petició CORS, que Apps Script no admet
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ password })
             });
+            return res.json();
+        }
+
+        function showLogin(message) {
+            bootEl.hidden = true;
+            appEl.hidden = true;
+            weekBar.hidden = true;
+            logoutBtn.hidden = true;
+            loginForm.hidden = false;
+            loginError.textContent = message || '';
+            passwordInput.focus();
+        }
+
+        function unlock(rows) {
+            allRows = rows.filter(r =>
+                r.setmana && String(r.setmana).trim() !== '' &&
+                r.nom && String(r.nom).trim() !== '' &&
+                String(r.pagat).toUpperCase() === 'TRUE'
+            ).map(r => ({
+                setmana: String(r.setmana).trim(),
+                nom: String(r.nom).trim(),
+                multa: String(r.multa || '').trim(),
+                import: parseFloat(String(r['import total']).replace(',', '.')) || 0
+            }));
+
+            weeks = [...new Set(allRows.map(r => r.setmana))]
+                .sort((a, b) => parseWeek(a) - parseWeek(b));
+            selectedWeekIndex = weeks.length - 1;
+
+            const fineTypes = [...new Set(allRows
+                .map(r => r.multa)
+                .filter(multa => multa !== '')
+            )].sort((a, b) => a.localeCompare(b, 'ca'));
+            fineTypeSelect.length = 1; // deixa només "Totes les multes"
+            fineTypes.forEach(multa => {
+                const opt = document.createElement('option');
+                opt.value = multa;
+                opt.textContent = multa;
+                fineTypeSelect.appendChild(opt);
+            });
+
+            bootEl.hidden = true;
+            loginForm.hidden = true;
+            passwordInput.value = '';
+            appEl.hidden = false;
+            weekBar.hidden = false;
+            logoutBtn.hidden = false;
+            update();
+        }
+
+        async function tryLogin(password, silent) {
+            loginBtn.disabled = true;
+            loginError.textContent = '';
+            try {
+                const data = await requestData(password);
+                if (data.ok) {
+                    if (!silent) setSaved(rememberInput.checked ? password : '');
+                    unlock(data.rows);
+                } else if (data.error === 'blocked') {
+                    showLogin('Massa intents. Espera uns minuts i torna-ho a provar.');
+                } else {
+                    setSaved('');
+                    showLogin(silent ? 'Cal tornar a escriure la contrasenya.' : 'Contrasenya incorrecta.');
+                }
+            } catch (err) {
+                showLogin('No s\'ha pogut connectar. Comprova la connexió i torna-ho a provar.');
+            } finally {
+                loginBtn.disabled = false;
+            }
+        }
+
+        loginForm.addEventListener('submit', e => {
+            e.preventDefault();
+            if (passwordInput.value) tryLogin(passwordInput.value, false);
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            setSaved('');
+            location.reload();
+        });
+
+        if (!API_URL) {
+            bootEl.textContent = 'Falta configurar API_URL a config.js.';
+        } else {
+            const saved = getSaved();
+            if (saved) tryLogin(saved, true);
+            else showLogin();
         }
 
         // ---------- Pintat ----------
